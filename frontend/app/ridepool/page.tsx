@@ -4,6 +4,8 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import YouPNG from "@/assets/map/you.png";
+import { Select, Option, Button } from "@material-tailwind/react";
+
 import {
   useJsApiLoader,
   GoogleMap,
@@ -18,10 +20,11 @@ import {
   Tab,
   TabsBody,
   TabPanel,
+  Input,
 } from "@material-tailwind/react";
 import { data } from "autoprefixer";
 import { AiFillCar } from "react-icons/ai";
-import { MdCreateNewFolder, MdLocationOn } from "react-icons/md";
+import { MdCreateNewFolder, MdLocationOn, MdDateRange } from "react-icons/md";
 import { BsCircleFill } from "react-icons/bs";
 import { FaLocation } from "react-icons/fa";
 
@@ -84,6 +87,35 @@ const page = (props: Props) => {
 
     setDirectionsResponse(results);
   }
+  const [date, setDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [Seats, setSeats] = useState(0);
+  const [cost, setCost] = useState(0);
+
+  const createRide = async () => {
+    if (!date || !endDate || !Seats || !cost)
+      return alert("Please fill all the fields");
+    const res = await fetch("https://edumate.glitch.me/createp", {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+      body: JSON.stringify({
+        createdby: "Omkar",
+        source: a,
+        destination: b,
+        cost: cost,
+        member: 1,
+        max: Seats,
+        startTime: date,
+        endTime: endDate,
+      }),
+    });
+    const data = await res.json();
+    console.log(data);
+  };
+
+  const findPools = async () => {};
 
   useEffect(() => {
     if (isLoaded) calculateRoute(a, b);
@@ -174,15 +206,89 @@ const page = (props: Props) => {
       </div>
       <div className="flex flex-col">
         <div className="flex flex-row px-5 py-2 mt-4 items-center">
-          <BsCircleFill className="h-6 w-6 p-1 text-green-500" />
+          <div className="w-1/6">
+            <BsCircleFill className="h-6 w-6 p-1 text-green-500" />
+          </div>
           <div className="w-5"></div>
-          <div className="text-black">{a}</div>
+          <div className="text-black w-full">{a}</div>
         </div>
-        <div className="h-[1px] bg-gray-400"></div>
+        <div className="mx-6 mt-2">
+          <div className="h-[1px] bg-gray-400"></div>
+        </div>
         <div className="flex flex-row px-5 py-2 mt-4 items-center">
-          <MdLocationOn className="h-5 w-5 text-red-500" />
+          <div className="w-1/6">
+            <MdLocationOn className="h-5 w-5 text-red-500" />
+          </div>
           <div className="w-5"></div>
-          <div className="text-black">{b}</div>
+          <div className="text-black w-full">{b}</div>
+        </div>
+        <div className="mx-6 mt-2">
+          <div className="h-[1px] bg-gray-400"></div>
+          <div className="text-green-500 mt-4 ml-6">Start time</div>
+          <div className="flex flex-row px-5 py-2 mt-1 items-center">
+            <div className="flex w-full flex-row border border-green-500 text-black rounded-lg p-2">
+              <input
+                type="datetime-local"
+                className="w-full"
+                onChange={(e) => {
+                  setDate(e.target.value);
+                  console.log(e.target.value);
+                }}
+              />
+            </div>
+          </div>
+          <div className="text-green-500 mt-4 ml-4">End time</div>
+          <div className="flex flex-row px-5 py-2 mt-1 items-center">
+            <div className="flex w-full flex-row border border-green-500 text-black rounded-lg p-2">
+              <input
+                type="datetime-local"
+                className="w-full"
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  console.log(e.target.value);
+                }}
+              />
+            </div>
+          </div>
+          <div className="flex w-full flex-row px-5 py-2 mt-3 text-black rounded-lg">
+            <Select
+              size="md"
+              label="Select seats"
+              onChange={(e) => {
+                console.log(`Selected ${e}`);
+                setSeats(parseInt(e));
+              }}
+            >
+              <Option value="2">2 Seats</Option>
+              <Option value="3">3 Seats</Option>
+              <Option value="4">4 Seats</Option>
+              <Option value="6">6 Seats</Option>
+            </Select>
+          </div>
+        </div>
+        <div className="w-full px-6 flex flex-row mt-4">
+          <div className="w-5"></div>
+          <Input
+            label="Ride Cost"
+            onChange={(e) => {
+              setCost(e.target.value);
+            }}
+          />
+          <div className="w-5"></div>
+        </div>
+        <div className="w-full flex flex-row mt-6 px-2">
+          <div className="w-5"></div>
+          <Button
+            color="green"
+            className="w-full "
+            onClick={() => {
+              if (tab === "find") findPools();
+              else createRide();
+            }}
+          >
+            {tab === "find" ? "Find Ride" : "Offer Ride"}
+          </Button>
+          <div className="w-5"></div>
         </div>
       </div>
     </div>
