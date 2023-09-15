@@ -1,10 +1,14 @@
-'use client'
+"use client";
 
-import { MdSwapVert } from 'react-icons/md'
-import { RiSendPlaneFill } from 'react-icons/ri'
-import { BsFillLayersFill } from 'react-icons/bs'
-import { RxCross2 } from 'react-icons/rx'
-import YouPNG from '@/assets/map/you.png'
+import { MdSwapVert } from "react-icons/md";
+import { RiSendPlaneFill } from "react-icons/ri";
+import {
+  BsArrowBarRight,
+  BsArrowRight,
+  BsFillLayersFill,
+} from "react-icons/bs";
+import { RxCross2 } from "react-icons/rx";
+import YouPNG from "@/assets/map/you.png";
 import {
   useJsApiLoader,
   GoogleMap,
@@ -19,21 +23,24 @@ import Slider from './Slider'
 import CameraIcon from '@/assets/map/camera.png'
 import { GiPathDistance } from 'react-icons/gi'
 import { BsClockHistory } from 'react-icons/bs'
+import { useRouter } from "next/navigation";
 
 function Map() {
+  const router = useRouter();
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY || "AIzaSyBmy2F0EtGGkSn-yEgVMfsjAQ-q3qZW49w",
     libraries: ['places'],
   })
 
-  const [map, setMap] = useState<google.maps.Map | null>(/** @type google.maps.Map */(null))
-  const [directionsResponse, setDirectionsResponse] = useState<
-    google.maps.DirectionsResult | null
-  >(null)
-  const [distance, setDistance] = useState('')
-  const [duration, setDuration] = useState('')
   const [ecoRoute, setEcoRoute] = useState(false)
 
+  const [map, setMap] = useState<google.maps.Map | null>(
+    /** @type google.maps.Map */ null
+  );
+  const [directionsResponse, setDirectionsResponse] =
+    useState<google.maps.DirectionsResult | null>(null);
+  const [distance, setDistance] = useState("");
+  const [duration, setDuration] = useState("");
 
   const [activeMarker, setActiveMarker] = useState(-1);
   const [infoDomReady, setInfoDomReady] = useState(false);
@@ -45,8 +52,49 @@ function Map() {
     desc: string
   }[]>([])
 
-  const [menu, showMenu] = useState(false)
+  const [menu, showMenu] = useState(false);
 
+  const mapLayerOptions = [
+    "Traffic Layer",
+    "Transit Layer",
+    "Bicycling Layer",
+    "Weather Layer",
+    "Cloud Layer",
+    "Panoramio Layer",
+    "Places Layer",
+    "Photos Layer",
+    "Carbon Layer",
+  ];
+
+  const [selectedOption, setSelectedOption] = useState("");
+
+  async function getLatLong(address: string) {
+    const res = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=AIzaSyBmy2F0EtGGkSn-yEgVMfsjAQ-q3qZW49w`
+    );
+    const data = await res.json();
+    console.log(data.results[0].geometry.location);
+    return data.results[0].geometry.location;
+  }
+
+
+  const goToPool = async () => {
+    if (
+      originRef.current?.value.length === 0 ||
+      destiantionRef.current?.value.length === 0
+    ) {
+      alert("Please enter origin and destination");
+      return;
+    }
+    const a = originRef.current?.value!;
+    const b = destiantionRef.current?.value!;
+    const aLatLong = await getLatLong(a);
+    const bLatLong = await getLatLong(b);
+
+    router.push(
+      `/ridepool?a=${a}&b=${b}&aLat=${aLatLong.lat}&aLong=${aLatLong.lng}&bLat=${bLatLong.lat}&bLong=${bLatLong.lng}`
+    );
+  };
 
   // const infoBoxOpts = {
   //   closeBoxURL: "",
@@ -56,30 +104,29 @@ function Map() {
   // };
 
   /** @type React.MutableRefObject<HTMLInputElement> */
-  const originRef = useRef<HTMLInputElement>()
+  const originRef = useRef<HTMLInputElement>();
   /** @type React.MutableRefObject<HTMLInputElement> */
-  const destiantionRef = useRef<HTMLInputElement>()
+  const destiantionRef = useRef<HTMLInputElement>();
 
   const { userCoords }: any = useMainContext();
   // const center = { lat: userCoords?.lat || 19.0645, lng: userCoords?.lng || 72.8359 }
 
   if (!isLoaded) {
     return (
-      <div className='flex h-screen w-screen justify-center items-center'>
+      <div className="flex h-screen w-screen justify-center items-center">
         <h1>Loading...</h1>
       </div>
-    )
+    );
   }
 
   const sendResult = async (result: google.maps.DirectionsResult) => {
-
-    fetch('https://edumate.glitch.me/poly', {
-      method: 'POST',
+    fetch("https://edumate.glitch.me/poly", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        url: result.routes[0].overview_polyline
+        url: result.routes[0].overview_polyline,
       }),
     })
       .then(res => res.json())
@@ -89,13 +136,17 @@ function Map() {
       })
 
   }
+
   async function calculateRoute() {
     // @ts-ignore
-    if (originRef?.current?.value === '' || destiantionRef.current.value === '') {
-      console.log('Origin and destination fields must not be empty')
-      return
+    if (
+      originRef?.current?.value === "" ||
+      destiantionRef?.current?.value === ""
+    ) {
+      console.log("Origin and destination fields must not be empty");
+      return;
     } else {
-      console.log('hi')
+      console.log("hi");
     }
     // eslint-disable-next-line no-undef
     const directionsService = new google.maps.DirectionsService()
@@ -115,20 +166,20 @@ function Map() {
       setDirectionsResponse(results)
       setDistance(results?.routes[0]?.legs[0]?.distance?.text || "NA")
       setDuration(results?.routes[0]?.legs[0]?.duration?.text || "NA")
-    } catch(e){
+    } catch (e) {
       alert("No route could be found between the origin and destination.")
       console.log(e)
     }
   }
 
   function clearRoute() {
-    setDirectionsResponse(null)
-    setDistance('')
-    setDuration('')
+    setDirectionsResponse(null);
+    setDistance("");
+    setDuration("");
     // @ts-ignore
-    originRef.current.value = ''
+    originRef.current.value = "";
     // @ts-ignore
-    destiantionRef.current.value = ''
+    destiantionRef.current.value = "";
   }
 
   const handleActiveMarker = (marker: number) => {
@@ -146,17 +197,17 @@ function Map() {
           onClick={() => setActiveMarker(-1)}
           center={userCoords}
           zoom={15}
-          mapContainerStyle={{ width: '100%', height: '100%' }}
+          mapContainerStyle={{ width: "100%", height: "100%" }}
           options={{
             zoomControl: false,
             streetViewControl: false,
             mapTypeControl: true,
-            fullscreenControl: false
+            fullscreenControl: false,
           }}
-          onLoad={map => {
+          onLoad={(map) => {
             // const trafficLayer = new google.maps.TrafficLayer();
             // trafficLayer.setMap(map);
-            setMap(map)
+            setMap(map);
           }}
         >
           <Marker
@@ -203,7 +254,6 @@ function Map() {
             ))
           }
 
-
           {directionsResponse && (
             <DirectionsRenderer routeIndex={
               ecoRoute ? 1 : 0
@@ -222,21 +272,30 @@ function Map() {
             >
               <input ref={originRef} className="flex-grow bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-green-500" type="search" placeholder='Origin'></input>
             </Autocomplete>
-            <MdSwapVert className={`text-gray-700 w-8 h-8`} aria-label='center back'
+            <MdSwapVert
+              className={`text-gray-700 w-8 h-8`}
+              aria-label="center back"
               onClick={() => {
-                if (!originRef.current?.value || !destiantionRef.current?.value) return;
-                const temp = originRef.current.value
-                originRef.current.value = destiantionRef.current.value
-                destiantionRef.current.value = temp
-              }} />
+                if (!originRef.current?.value || !destiantionRef.current?.value)
+                  return;
+                const temp = originRef.current.value;
+                originRef.current.value = destiantionRef.current.value;
+                destiantionRef.current.value = temp;
+              }}
+            />
           </div>
           <div className="flex-grow-1 flex space-x-2 items-center">
-            <Autocomplete
-              className='w-full'
-            >
-              <input ref={destiantionRef} className="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-green-500" type="search" placeholder='Destination'></input>
+            <Autocomplete className="w-full">
+              <input
+                ref={destiantionRef}
+                className="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-green-500"
+                type="search"
+                placeholder="Destination"
+              ></input>
             </Autocomplete>
-            <RiSendPlaneFill className={`text-green-500 w-8 h-8`} aria-label='center back'
+            <RiSendPlaneFill
+              className={`text-green-500 w-8 h-8`}
+              aria-label="center back"
               onClick={() => {
                 if (!originRef.current?.value || !destiantionRef.current?.value) return;
                 calculateRoute()
@@ -266,16 +325,15 @@ function Map() {
       </div>
 
       {/* Menu - ahowing having buttons for parking data, traffic data, carbon efficient data,  and more */}
-      {
-        menu && (
-          <div
-            onClick={() => {
-              showMenu(false)
-            }}
-            className='fixed top-0 left-0 h-screen w-screen bg-black bg-opacity-50'
-          >
-            <div className='fixed bottom-14 right-14 rounded-md bg-white shadow-md w-[80%] h-32'>
-              {/* <select 
+      {menu && (
+        <div
+          onClick={() => {
+            showMenu(false);
+          }}
+          className="fixed top-0 left-0 h-screen w-screen bg-black bg-opacity-50"
+        >
+          <div className="fixed bottom-14 right-14 rounded-md bg-white shadow-md w-[80%] h-32">
+            {/* <select 
                 className='w-full h-full rounded-md'
                 value={selectedOption}
                 onChange={(e)=>{
@@ -296,23 +354,31 @@ function Map() {
                   ))
                 }
               </select> */}
-              Nothing Here!
-            </div>
+            Nothing Here!
           </div>
-        )
-      }
+        </div>
+      )}
 
       {/* Floating Btn*/}
-      <div className="fixed bottom-4 right-4">
+      {/* <div className="fixed bottom-4 right-4">
         <BsFillLayersFill
           onClick={() => {
-            showMenu(true)
+            showMenu(true);
           }}
-          className="bg-green-500 hover:bg-green-700 text-white w-10 h-10 p-2 rounded-full" />
+          className="bg-green-500 hover:bg-green-700 text-white w-10 h-10 p-2 rounded-full"
+        />
+      </div> */}
+
+      <div className="fixed bottom-4 right-4">
+        <BsArrowRight
+          onClick={() => {
+            goToPool();
+          }}
+          className="bg-green-500 hover:bg-green-700 text-white w-14 h-14 p-4 rounded-full"
+        />
       </div>
     </div>
-
-  )
+  );
 }
 
-export default Map
+export default Map;
