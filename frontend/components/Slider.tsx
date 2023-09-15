@@ -8,10 +8,17 @@
 import Cat from '@/assets/map/cat.jpg'
 import Test from '@/assets/map/test.jpg'
 
-export default function Slider() {
+type MarkerProps = {
+    latitude: number,
+    longitude: number,
+    img: string,
+    desc: string
+}
+
+export default function Slider({ marker }: {marker : MarkerProps}) {
     return (
         <div
-         className='w-[200px]'
+            className='w-[200px]'
         >
             {/* <Swiper
                 pagination={{
@@ -25,8 +32,10 @@ export default function Slider() {
                 <SwiperSlide className=''> Slide 2</SwiperSlide>
             </Swiper> */}
 
-            <img src={Test.src}  className="w-full object-cover" alt="" />
-            <p className='line-clamp-2 w-full text-black text-base mt-2'>Lorem ipsum dolor sit amet consectetur adipisicing elit. Sequi harum nulla aspernatur est facere quaerat cumque molestiae distinctio doloremque iure!</p>
+            <img src={marker?.img} className="w-full object-cover" alt="" />
+            <p className='line-clamp-2 w-full text-black text-base mt-2'>{
+                marker?.desc || ""
+            }</p>
         </div>
 
     );
