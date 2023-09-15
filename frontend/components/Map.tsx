@@ -16,20 +16,23 @@ import {
   Autocomplete,
   DirectionsRenderer,
   InfoBox,
-} from "@react-google-maps/api";
-import { useRef, useState } from "react";
-import { useMainContext } from "@/context/MainContext";
-import Slider from "./Slider";
+} from '@react-google-maps/api'
+import { useRef, useState } from 'react'
+import { useMainContext } from '@/context/MainContext'
+import Slider from './Slider'
+import CameraIcon from '@/assets/map/camera.png'
+import { GiPathDistance } from 'react-icons/gi'
+import { BsClockHistory } from 'react-icons/bs'
 import { useRouter } from "next/navigation";
 
 function Map() {
   const router = useRouter();
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey:
-      process.env.REACT_APP_GOOGLE_MAPS_API_KEY ||
-      "AIzaSyBmy2F0EtGGkSn-yEgVMfsjAQ-q3qZW49w",
-    libraries: ["places"],
-  });
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY || "AIzaSyBmy2F0EtGGkSn-yEgVMfsjAQ-q3qZW49w",
+    libraries: ['places'],
+  })
+
+  const [ecoRoute, setEcoRoute] = useState(false)
 
   const [map, setMap] = useState<google.maps.Map | null>(
     /** @type google.maps.Map */ null
@@ -41,6 +44,13 @@ function Map() {
 
   const [activeMarker, setActiveMarker] = useState(-1);
   const [infoDomReady, setInfoDomReady] = useState(false);
+
+  const [markers, setMarkers] = useState<{
+    longitude: number,
+    latitude: number,
+    img: string,
+    desc: string
+  }[]>([])
 
   const [menu, showMenu] = useState(false);
 
@@ -57,6 +67,16 @@ function Map() {
   ];
 
   const [selectedOption, setSelectedOption] = useState("");
+
+  async function getLatLong(address: string) {
+    const res = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=AIzaSyBmy2F0EtGGkSn-yEgVMfsjAQ-q3qZW49w`
+    );
+    const data = await res.json();
+    console.log(data.results[0].geometry.location);
+    return data.results[0].geometry.location;
+  }
+
 
   const goToPool = async () => {
     if (
@@ -89,10 +109,7 @@ function Map() {
   const destiantionRef = useRef<HTMLInputElement>();
 
   const { userCoords }: any = useMainContext();
-  const center = {
-    lat: userCoords?.lat || 19.0645,
-    lng: userCoords?.lng || 72.8359,
-  };
+  // const center = { lat: userCoords?.lat || 19.0645, lng: userCoords?.lng || 72.8359 }
 
   if (!isLoaded) {
     return (
@@ -112,25 +129,19 @@ function Map() {
         url: result.routes[0].overview_polyline,
       }),
     })
-      .then((res) => res.json())
-      .then((response) => {
-        console.log("User's Location Info: ", response);
-      });
-  };
-  async function getLatLong(address: string) {
-    const res = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=AIzaSyBmy2F0EtGGkSn-yEgVMfsjAQ-q3qZW49w`
-    );
-    const data = await res.json();
-    console.log(data.results[0].geometry.location);
-    return data.results[0].geometry.location;
+      .then(res => res.json())
+      .then(response => {
+        console.log("User's Location Info: ", response)
+        setMarkers(response?.data)
+      })
+
   }
 
   async function calculateRoute() {
     // @ts-ignore
     if (
       originRef?.current?.value === "" ||
-      destiantionRef.current.value === ""
+      destiantionRef?.current?.value === ""
     ) {
       console.log("Origin and destination fields must not be empty");
       return;
@@ -138,21 +149,27 @@ function Map() {
       console.log("hi");
     }
     // eslint-disable-next-line no-undef
-    const directionsService = new google.maps.DirectionsService();
-    const results = await directionsService.route({
-      // @ts-ignore
-      origin: originRef?.current?.value,
-      // @ts-ignore
-      destination: destiantionRef?.current?.value,
-      // eslint-disable-next-line no-undef
-      travelMode: google.maps.TravelMode.DRIVING,
-    });
-    console.log(results);
+    const directionsService = new google.maps.DirectionsService()
+    try {
+      const results = await directionsService.route({
+        // @ts-ignore
+        origin: originRef?.current?.value,
+        // @ts-ignore
+        destination: destiantionRef?.current?.value,
+        // eslint-disable-next-line no-undef
+        travelMode: google.maps.TravelMode.DRIVING,
+        provideRouteAlternatives: true
+      })
+      console.log(results)
 
-    await sendResult(results);
-    setDirectionsResponse(results);
-    setDistance(results?.routes[0]?.legs[0]?.distance?.text || "NA");
-    setDuration(results?.routes[0]?.legs[0]?.duration?.text || "NA");
+      await sendResult(results)
+      setDirectionsResponse(results)
+      setDistance(results?.routes[0]?.legs[0]?.distance?.text || "NA")
+      setDuration(results?.routes[0]?.legs[0]?.duration?.text || "NA")
+    } catch (e) {
+      alert("No route could be found between the origin and destination.")
+      console.log(e)
+    }
   }
 
   function clearRoute() {
@@ -178,7 +195,7 @@ function Map() {
         {/* Google Map Box */}
         <GoogleMap
           onClick={() => setActiveMarker(-1)}
-          center={center}
+          center={userCoords}
           zoom={15}
           mapContainerStyle={{ width: "100%", height: "100%" }}
           options={{
@@ -195,56 +212,65 @@ function Map() {
         >
           <Marker
             onClick={() => handleActiveMarker(0)}
-            position={center}
-            icon={
-              YouPNG.src ||
-              "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
-            }
-          >
-            {/* Infobox */}
-            {activeMarker === 0 && (
-              <InfoBox
-                options={{ closeBoxURL: ``, enableEventPropagation: true }}
-                onDomReady={() => setInfoDomReady(true)}
-                onUnmount={() => setInfoDomReady(false)}
-              >
-                <div className="flex flex-col items-center justify-center bg-white p-4 rounded-md shadow-xl">
-                  {/* <div className="flex items-center justify-center">
-                      <img src={YouPNG.src || "http://maps.google.com/mapfiles/ms/icons/green-dot.png"} alt="You" className="w-8 h-8" />
-                      <span className="text-sm font-semibold text-black">You</span>
-                    </div>
-                    <div className="flex items-center justify-center">
-                      <span className="text-xs font-semibold text-black">Lat: {center.lat.toFixed(4)}</span>
-                      <span className="text-xs font-semibold text-black">Lng: {center.lng.toFixed(4)}</span>
-                    </div> */}
+            position={userCoords}
+            icon={YouPNG.src || "http://maps.google.com/mapfiles/ms/icons/green-dot.png"}
+          />
 
-                  <div className="absolute right-2 top-2 cursor-pointer bg-white p-1">
-                    <RxCross2
-                      className="w-6 h-6 text-black"
-                      onClick={() => handleActiveMarker(-1)}
-                    />
-                  </div>
-                  <Slider />
-                </div>
-              </InfoBox>
-            )}
-          </Marker>
+          {
+            markers.map((marker, index) => (
+              <Marker
+                key={index}
+                onClick={() => handleActiveMarker(index + 1)}
+                position={{ lat: marker.latitude, lng: marker.longitude }}
+                icon={CameraIcon.src || "http://maps.google.com/mapfiles/ms/icons/green-dot.png"}
+              >
+                {/* Infobox */}
+                {
+                  activeMarker === index + 1 && (
+                    <InfoBox
+                      options={{ closeBoxURL: ``, enableEventPropagation: true }}
+                      onDomReady={() => setInfoDomReady(true)}
+                      onUnmount={() => setInfoDomReady(false)}
+                    >
+                      <div className="flex flex-col items-center justify-center bg-white p-4 rounded-md shadow-xl">
+                        {/* <div className="flex items-center justify-center">
+                          <img src={YouPNG.src || "http://maps.google.com/mapfiles/ms/icons/green-dot.png"} alt="You" className="w-8 h-8" />
+                          <span className="text-sm font-semibold text-black">You</span>
+                        </div>
+                        <div className="flex items-center justify-center">
+                          <span className="text-xs font-semibold text-black">Lat: {center.lat.toFixed(4)}</span>
+                          <span className="text-xs font-semibold text-black">Lng: {center.lng.toFixed(4)}</span>
+                        </div> */}
+
+                        <div className='absolute right-2 top-2 cursor-pointer bg-white p-1'>
+                          <RxCross2 className='w-6 h-6 text-black' onClick={() => handleActiveMarker(-1)} />
+                        </div>
+                        <Slider marker={marker} />
+                      </div>
+                    </InfoBox>
+                  )
+                }
+              </Marker>
+            ))
+          }
 
           {directionsResponse && (
-            <DirectionsRenderer directions={directionsResponse} />
+            <DirectionsRenderer routeIndex={
+              ecoRoute ? 1 : 0
+            } directions={directionsResponse} />
           )}
         </GoogleMap>
       </div>
-      <div className="p-4 w-[90%] md:w-70% mx-auto rounded-lg m-4 bg-white shadow-base min-w-fit z-10">
+      <div className="p-4 w-[90%] md:w-70% mx-auto rounded-lg m-4 bg-white shadow-base min-w-fit z-10 relative">
         <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 justify-between">
           <div className="flex-grow-1  flex space-x-2 items-center">
-            <Autocomplete className="w-full">
-              <input
-                ref={originRef}
-                className="flex-grow bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-green-500"
-                type="search"
-                placeholder="Origin"
-              ></input>
+            <Autocomplete
+              onPlaceChanged={() => {
+                console.log('Place Changed')
+              }}
+              className='w-full'
+            >
+              <input ref={originRef} className="flex-grow bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-green-500" type="search" placeholder='Origin'></input>
             </Autocomplete>
             <MdSwapVert
               className={`text-gray-700 w-8 h-8`}
@@ -271,17 +297,31 @@ function Map() {
               className={`text-green-500 w-8 h-8`}
               aria-label="center back"
               onClick={() => {
-                if (!originRef.current.value || !destiantionRef.current.value)
-                  return;
-                calculateRoute();
-              }}
-            />
+                if (!originRef.current?.value || !destiantionRef.current?.value) return;
+                calculateRoute()
+              }} />
           </div>
         </div>
-        {/* <div className="flex space-x-4 mt-4 justify-between w-full">
-          <span className='w-[50%]'>Distance: {distance}</span>
-          <span className='w-[50%]'>Duration: {duration}</span>
-        </div> */}
+        {
+          distance && duration && (
+            <div className="flex space-x-4 mt-4 justify-between w-full text-black">
+              <span className='w-[50%] flex items-center truncate'><GiPathDistance className="w-5 h-5 mr-1 text-green-500" />{distance}</span>
+              <span className='w-[50%] flex items-center truncate'><BsClockHistory className="w-5 h-5 mr-1 text-green-500" />{duration}</span>
+            </div>
+          )
+        }
+        {
+          directionsResponse && directionsResponse?.routes?.length > 1 && (
+            <div
+              className={`absolute top-[102%] left-0 w-fit flex items-center justify-center ${ecoRoute ? "bg-green-500 text-white" : "bg-white text-green-500"} rounded-full py-1 px-2 text-sm cursor-pointer`}
+              onClick={() => {
+                setEcoRoute(!ecoRoute)
+              }}
+            >
+              Eco Route
+            </div>
+          )
+        }
       </div>
 
       {/* Menu - ahowing having buttons for parking data, traffic data, carbon efficient data,  and more */}
