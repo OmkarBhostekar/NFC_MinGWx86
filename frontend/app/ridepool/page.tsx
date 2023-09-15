@@ -27,7 +27,7 @@ import { FaLocation } from "react-icons/fa";
 
 type Props = {};
 
-const page = (props: Props) => {
+const RidePool = (props: Props) => {
   const params = useSearchParams();
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey:
@@ -189,4 +189,4 @@ const page = (props: Props) => {
   );
 };
 
-export default page;
+export default RidePool;
