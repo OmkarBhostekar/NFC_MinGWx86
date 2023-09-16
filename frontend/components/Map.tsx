@@ -27,6 +27,7 @@ import { useRouter } from "next/navigation";
 import { AiFillAlert } from "react-icons/ai";
 import Hospital from "@/assets/map/hospital.png";
 import PoliceCar from "@/assets/map/police-car.png";
+import { HiClipboardDocumentList } from 'react-icons/hi2'
 // import Police from "@/assets/map/police.png";
 
 function Map() {
@@ -493,6 +494,14 @@ function Map() {
           }}
           className="bg-red-500 hover:bg-red-700 text-white w-10 h-10 p-2 rounded-full"
           style={{ boxShadow: "red 0px 0px 31px 2px" }}
+        />
+      </div>
+      <div className="fixed bottom-4 left-20">
+        <HiClipboardDocumentList
+          onClick={() => {
+            showMenu(true);
+          }}
+          className="bg-green-500 hover:bg-green-700 text-white w-10 h-10 p-2 rounded-full"
         />
       </div>
 
