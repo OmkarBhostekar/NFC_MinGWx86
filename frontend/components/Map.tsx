@@ -378,14 +378,6 @@ function Map() {
             <DirectionsRenderer routeIndex={
               ecoRoute ? 1 : 0
             }
-            options={{
-              polylineOptions: {
-                strokeColor: ecoRoute ? "green" : "red",
-                strokeOpacity: 0.5,
-                strokeWeight: 4
-              }
-            }}
-
              directions={directionsResponse} />
           )}
         </GoogleMap>
