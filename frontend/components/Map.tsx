@@ -499,7 +499,7 @@ function Map() {
       <div className="fixed bottom-4 left-20">
         <HiClipboardDocumentList
           onClick={() => {
-            showMenu(true);
+            router.push("/my-trips")
           }}
           className="bg-green-500 hover:bg-green-700 text-white w-10 h-10 p-2 rounded-full"
         />
