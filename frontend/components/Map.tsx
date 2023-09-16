@@ -201,7 +201,7 @@ function Map() {
           options={{
             zoomControl: false,
             streetViewControl: false,
-            mapTypeControl: true,
+            mapTypeControl: false,
             fullscreenControl: false,
           }}
           onLoad={(map) => {

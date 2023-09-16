@@ -7,10 +7,11 @@ import { FaUser } from 'react-icons/fa'
 import { useRouter } from 'next/navigation'
 import { useMainContext } from '@/context/MainContext'
 type Props = {
-    trip : TripType
+    trip: TripType,
+    parent: string
 }
 
-const Card = ({trip}: Props) => {
+const Card = ({ trip, parent }: Props) => {
 
     const router = useRouter();
 
@@ -18,14 +19,14 @@ const Card = ({trip}: Props) => {
 
     return (
         <div className='flex flex-col space-y-4 p-2 bg-gray-200 rounded-lg'
-            onClick={()=>{
+            onClick={() => {
                 // setTrip(trip)
-                router.push(`/trip-detail/${trip?._id}`)
+                router.push(`/trip-detail/${trip?._id}${parent === "my-trips" ? "?from=my-trips" : ""}`)
             }}
         >
             <div className='w-full'>
                 <div className='flex items-center justify-between'>
-                    <p className='text-sm text-black font-semibold'>{trip?.endTime}</p>
+                    <p className='text-sm text-black font-semibold'>Start Time : {trip?.startTime}</p>
                     <p className='text-sm text-black'>Pass : <span className='text-xs text-green-500'>{trip?.member}</span></p>
                 </div>
                 <div className='flex items-center space-x-1'>

@@ -27,6 +27,9 @@ import { AiFillCar } from "react-icons/ai";
 import { MdCreateNewFolder, MdLocationOn, MdDateRange } from "react-icons/md";
 import { BsCircleFill } from "react-icons/bs";
 import { FaLocation } from "react-icons/fa";
+import Card from "@/components/Card";
+import { RxCross2 } from "react-icons/rx";
+import Slider from "@/components/Slider";
 
 type Props = {};
 
@@ -92,6 +95,24 @@ const RidePool = (props: Props) => {
   const [Seats, setSeats] = useState(0);
   const [cost, setCost] = useState(0);
 
+
+  const [trips, setTrips] = useState([]);
+  const fetchData = () => {
+    fetch("https://edumate.glitch.me/getuserpool")
+      .then(res => res.json())
+      .then((data) => {
+        console.log("trips", data);
+        setTrips(data.data)
+      }).catch((e) => {
+        console.log(e)
+        alert("Something went wrong!")
+      })
+  }
+
+  useEffect(() => {
+    fetchData();
+  }, [])
+
   const createRide = async () => {
     if (!date || !endDate || !Seats || !cost)
       return alert("Please fill all the fields");
@@ -115,7 +136,7 @@ const RidePool = (props: Props) => {
     console.log(data);
   };
 
-  const findPools = async () => {};
+  const findPools = async () => { };
 
   useEffect(() => {
     if (isLoaded) calculateRoute(a, b);
@@ -131,7 +152,7 @@ const RidePool = (props: Props) => {
 
   return (
     <div className="h-screen w-screen bg-white flex flex-col">
-      <div className="h-2/5 w-full bg-gray-400">
+      <div className="h-full w-full bg-gray-400">
         <GoogleMap
           onClick={() => setActiveMarker(-1)}
           center={center}
@@ -182,116 +203,137 @@ const RidePool = (props: Props) => {
           )}
         </GoogleMap>
       </div>
-      <div className="flex flex-col bg-green-500 p-1 rounded-2xl">
-        <Tabs value="find">
-          <TabsHeader
-            className="bg-transparent"
-            indicatorProps={{
-              className: "bg-white rounded-2xl shadow-none !text-gray-900",
-            }}
-          >
-            {data.map(({ label, value, icon }) => (
-              <Tab key={value} value={value}>
-                <div
-                  className="flex items-center gap-2"
-                  onClick={() => setTab(value)}
-                >
-                  {React.createElement(icon, { className: "w-5 h-5" })}
-                  {label}
-                </div>
-              </Tab>
-            ))}
-          </TabsHeader>
-        </Tabs>
-      </div>
-      <div className="flex flex-col">
-        <div className="flex flex-row px-5 py-2 mt-4 items-center">
-          <div className="w-1/6">
-            <BsCircleFill className="h-6 w-6 p-1 text-green-500" />
-          </div>
-          <div className="w-5"></div>
-          <div className="text-black w-full">{a}</div>
-        </div>
-        <div className="mx-6 mt-2">
-          <div className="h-[1px] bg-gray-400"></div>
-        </div>
-        <div className="flex flex-row px-5 py-2 mt-4 items-center">
-          <div className="w-1/6">
-            <MdLocationOn className="h-5 w-5 text-red-500" />
-          </div>
-          <div className="w-5"></div>
-          <div className="text-black w-full">{b}</div>
-        </div>
-        <div className="mx-6 mt-2">
-          <div className="h-[1px] bg-gray-400"></div>
-          <div className="text-green-500 mt-4 ml-6">Start time</div>
-          <div className="flex flex-row px-5 py-2 mt-1 items-center">
-            <div className="flex w-full flex-row border border-green-500 text-black rounded-lg p-2">
-              <input
-                type="datetime-local"
-                className="w-full"
-                onChange={(e) => {
-                  setDate(e.target.value);
-                  console.log(e.target.value);
-                }}
-              />
-            </div>
-          </div>
-          <div className="text-green-500 mt-4 ml-4">End time</div>
-          <div className="flex flex-row px-5 py-2 mt-1 items-center">
-            <div className="flex w-full flex-row border border-green-500 text-black rounded-lg p-2">
-              <input
-                type="datetime-local"
-                className="w-full"
-                onChange={(e) => {
-                  setEndDate(e.target.value);
-                  console.log(e.target.value);
-                }}
-              />
-            </div>
-          </div>
-          <div className="flex w-full flex-row px-5 py-2 mt-3 text-black rounded-lg">
-            <Select
-              size="md"
-              label="Select seats"
-              onChange={(e) => {
-                console.log(`Selected ${e}`);
-                setSeats(parseInt(e));
+      <div className="absolute bottom-0 left-0 right-0 h-1/2 flex flex-col rounded-t-2xl bg-white text-black p-2">
+        <div className="flex flex-col bg-green-500 p-1 rounded-2xl">
+          <Tabs value="find">
+            <TabsHeader
+              className="bg-transparent"
+              indicatorProps={{
+                className: "bg-white rounded-2xl shadow-none !text-gray-900",
               }}
             >
-              <Option value="2">2 Seats</Option>
-              <Option value="3">3 Seats</Option>
-              <Option value="4">4 Seats</Option>
-              <Option value="6">6 Seats</Option>
-            </Select>
-          </div>
+              {data.map(({ label, value, icon }) => (
+                <Tab key={value} value={value}>
+                  <div
+                    className="flex items-center gap-2"
+                    onClick={() => setTab(value)}
+                  >
+                    {React.createElement(icon, { className: "w-5 h-5" })}
+                    {label}
+                  </div>
+                </Tab>
+              ))}
+            </TabsHeader>
+          </Tabs>
         </div>
-        <div className="w-full px-6 flex flex-row mt-4">
-          <div className="w-5"></div>
-          <Input
-            label="Ride Cost"
-            onChange={(e) => {
-              setCost(e.target.value);
-            }}
-          />
-          <div className="w-5"></div>
-        </div>
-        <div className="w-full flex flex-row mt-6 px-2">
-          <div className="w-5"></div>
-          <Button
-            color="green"
-            className="w-full "
-            onClick={() => {
-              if (tab === "find") findPools();
-              else createRide();
-            }}
-          >
-            {tab === "find" ? "Find Ride" : "Offer Ride"}
-          </Button>
-          <div className="w-5"></div>
+        <div className="flex flex-col overflow-auto">
+          {
+            tab === "find" ? (
+              <div
+                className='w-full p-4'
+              >
+                <div
+                  className='flex flex-col w-full space-y-2 text-black'
+                >
+                  {
+                    trips && trips.map((obj, idx) => {
+                      return <Card key={idx} trip={obj} parent="ridepool" />
+                    })
+                  }
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-row px-5 py-2 mt-4 items-center">
+                  <div className="w-1/6">
+                    <BsCircleFill className="h-6 w-6 p-1 text-green-500" />
+                  </div>
+                  <div className="w-5"></div>
+                  <div className="text-black w-full">{a}</div>
+                </div>
+                <div className="mx-6 mt-2">
+                  <div className="h-[1px] bg-gray-400"></div>
+                </div>
+                <div className="flex flex-row px-5 py-2 mt-4 items-center">
+                  <div className="w-1/6">
+                    <MdLocationOn className="h-5 w-5 text-red-500" />
+                  </div>
+                  <div className="w-5"></div>
+                  <div className="text-black w-full">{b}</div>
+                </div>
+                <div className="mx-6 mt-2">
+                  <div className="h-[1px] bg-gray-400"></div>
+                  <div className="text-green-500 mt-4 ml-6">Start time</div>
+                  <div className="flex flex-row px-5 py-2 mt-1 items-center">
+                    <div className="flex w-full flex-row border border-green-500 text-black rounded-lg p-2">
+                      <input
+                        type="datetime-local"
+                        className="w-full"
+                        onChange={(e) => {
+                          setDate(e.target.value);
+                          console.log(e.target.value);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="text-green-500 mt-4 ml-4">End time</div>
+                  <div className="flex flex-row px-5 py-2 mt-1 items-center">
+                    <div className="flex w-full flex-row border border-green-500 text-black rounded-lg p-2">
+                      <input
+                        type="datetime-local"
+                        className="w-full"
+                        onChange={(e) => {
+                          setEndDate(e.target.value);
+                          console.log(e.target.value);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex w-full flex-row px-5 py-2 mt-3 text-black rounded-lg">
+                    <Select
+                      size="md"
+                      label="Select seats"
+                      onChange={(e) => {
+                        console.log(`Selected ${e}`);
+                        setSeats(parseInt(e));
+                      }}
+                    >
+                      <Option value="2">2 Seats</Option>
+                      <Option value="3">3 Seats</Option>
+                      <Option value="4">4 Seats</Option>
+                      <Option value="6">6 Seats</Option>
+                    </Select>
+                  </div>
+                </div>
+                <div className="w-full px-6 flex flex-row mt-4">
+                  <div className="w-5"></div>
+                  <Input
+                    label="Ride Cost"
+                    onChange={(e) => {
+                      setCost(e.target.value);
+                    }}
+                  />
+                  <div className="w-5"></div>
+                </div>
+                <div className="w-full flex flex-row mt-6 px-2">
+                  <div className="w-5"></div>
+                  <Button
+                    color="green"
+                    className="w-full "
+                    onClick={() => {
+                      createRide();
+                    }}
+                  >
+                    Offer Ride
+                  </Button>
+                  <div className="w-5"></div>
+                </div>
+              </>
+            )
+          }
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

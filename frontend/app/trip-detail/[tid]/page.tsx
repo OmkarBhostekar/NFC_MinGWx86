@@ -30,6 +30,8 @@ import Slider from "@/components/Slider";
 import { GoDotFill } from "react-icons/go";
 import { HiChevronDown } from "react-icons/hi";
 import { TripType } from "@/types/MainTypes";
+import WeatherCarousel from "@/components/WeatherCarousel";
+import { TiWeatherPartlySunny } from "react-icons/ti";
 
 type Props = {};
 
@@ -41,6 +43,8 @@ const TripDetail = () => {
       "AIzaSyBmy2F0EtGGkSn-yEgVMfsjAQ-q3qZW49w",
     libraries: ["places"],
   });
+
+  const searchParams = useSearchParams();
   const { tid } = useParams()
   const [directionsResponse, setDirectionsResponse] =
     useState<google.maps.DirectionsResult | null>(null);
@@ -72,6 +76,8 @@ const TripDetail = () => {
 
   const [trip, setTrip] = useState<TripType | null>(null)
 
+  const [showWeather, setShowWeather] = useState(false)
+
   const [markers, setMarkers] = useState<{
     longitude: number,
     latitude: number,
@@ -85,14 +91,12 @@ const TripDetail = () => {
   };
   const [tab, setTab] = useState("find");
 
-  async function getLatLong(address: string) {
-    const res = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=AIzaSyBmy2F0EtGGkSn-yEgVMfsjAQ-q3qZW49w`
-    );
-    const data = await res.json();
-    console.log(data.results[0].geometry.location);
-    return data.results[0].geometry.location;
-  }
+  const [dstLatLong, setDstLatLong] = useState<{
+    lat: number,
+    lng: number
+  } | null>(null);
+
+  const [isFromMyTrips, setIsFromMyTrips] = useState(false);
 
   const sendResult = async (result: google.maps.DirectionsResult) => {
     fetch("https://edumate.glitch.me/poly", {
@@ -109,9 +113,9 @@ const TripDetail = () => {
         console.log("User's Location Info: ", response)
         setMarkers(response?.data)
       })
-      .catch((e)=>{
+      .catch((e) => {
         console.log(e);
-        alert("Something went wrong!")
+        // alert("Something went wrong!")
       })
 
   }
@@ -135,6 +139,16 @@ const TripDetail = () => {
     setDuration(results?.routes[0]?.legs[0]?.duration?.text || "NA")
   }
 
+
+  async function getLatLong(address: string) {
+    const res = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=AIzaSyBmy2F0EtGGkSn-yEgVMfsjAQ-q3qZW49w`
+    );
+    const data = await res.json();
+    console.log(data.results[0].geometry.location);
+    return data.results[0].geometry.location;
+  }
+
   const fetchData = (id: string) => {
 
     fetch(`https://edumate.glitch.me/getpooldetail/${id}`)
@@ -142,16 +156,24 @@ const TripDetail = () => {
       .then((data) => {
         console.log("trips", data);
         setTrip(data.data)
-        const tempData : TripType = data.data;
+        const tempData: TripType = data.data;
+        getLatLong(tempData.source)
+          .then((data) => {
+            console.log("heloo", data)
+            setDstLatLong(data)
+          })
         calculateRoute(tempData.source, tempData?.destination);
       }).catch((e) => {
         console.log(e)
-        alert("Something went wrong!")
+        // alert("Something went wrong!")
       })
   }
 
   useEffect(() => {
-    if (isLoaded && tid) fetchData(tid as string);
+    setIsFromMyTrips(searchParams?.get("from") === "my-trips");
+    if (isLoaded && tid) {
+      fetchData(tid as string);
+    }
   }, [isLoaded, tid]);
 
   if (!isLoaded) {
@@ -168,6 +190,27 @@ const TripDetail = () => {
     }
     setActiveMarker(marker);
   };
+
+  const joinTrip = () => {
+    fetch("https://edumate.glitch.me/joinpool", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        poolId: trip?._id
+      }),
+    })
+      .then(res => res.json())
+      .then(response => {
+        console.log("User's Location Info: ", response)
+        alert("Joined Successfully")
+      })
+      .catch((e) => {
+        console.log(e);
+        alert("Something went wrong!")
+      })
+  }
 
   return (
     <div className="h-screen w-screen bg-white flex flex-col relative">
@@ -239,9 +282,18 @@ const TripDetail = () => {
         </GoogleMap>
       </div>
       <div className="absolute bottom-0 left-0 right-0 min-h-[20%] h-fit flex flex-col rounded-t-2xl bg-white text-black p-2">
+        <button
+          className="absolute bottom-[104%] right-2 bg-white p-1 rounded-md border border-green-500"
+          onClick={() => {
+            setShowWeather(!showWeather)
+          }}
+        >
+          <TiWeatherPartlySunny className="w-6 h-6 text-green-500" />
+        </button>
+
         <div className="w-full p-2">
-          <p className="font-bold">Ride Start on 25 Mar, 10:30 am</p>
-        </div>
+          <p className="font-bold">Ride Start on {trip?.startTime}</p>
+          Bb</div>
         <div className='w-full p-2 flex flex-col space-y-4 border-b-2 border-dashed border-gray-500 '>
           <div className='flex items-center space-x-1'>
             <GoDotFill className="text-green-600 w-3 h-3 mx-0.5" />
@@ -256,12 +308,12 @@ const TripDetail = () => {
           <div className="flex w-12 h-12 border rounded-md border-green-500">
             <img src={UserIcon.src} className="w-full object-contain" alt="" />
           </div>
-          <div className="flex flex-col space-y-2">
-            <div className="flex items-center justify-between font-semibold">
+          <div className="flex flex-col space-y-2 w-full">
+            <div className="flex items-center justify-between font-semibold w-full">
               <p>{trip?.createdby}</p>
               <p>Rs. {trip?.cost}</p>
             </div>
-            <div className="flex items-center justify-between text-black">
+            <div className="flex items-center justify-between text-black w-full">
               <p className="text-xs font-extralight">Seats {trip?.max}</p>
               <p className="text-xs font-extralight">{trip?.member} Pass</p>
             </div>
@@ -271,11 +323,34 @@ const TripDetail = () => {
           <div className="w-10 h-10 rounded-full border-2 border-green-500 flex items-center justify-center p-2">
             <BiSolidMessageRoundedDetail className="w-8 h-8 text-green-500" />
           </div>
-          <button className="w-full p-2 text-sm rounded-full bg-green-500 text-white">
-            OFFER RIDE
+          <button
+            onClick={() => {
+              isFromMyTrips ?
+                alert("Ride Started") :
+                joinTrip()
+            }}
+            className="w-full p-2 text-sm rounded-full bg-green-500 text-white">
+            {isFromMyTrips ? "Start Ride" : "Join"}
           </button>
         </div>
       </div>
+
+
+
+
+      {
+        dstLatLong?.lat && dstLatLong?.lng && showWeather &&
+        (
+          <div className="absolute top-0 bottom-0 left-0 right-0 bg-gray-600 bg-opacity-50">
+            <RxCross2 className="absolute top-2 right-2 w-6 h-6 text-white" onClick={() => setShowWeather(false)} />
+            <div
+            className="w-fit h-fit"
+            >
+              <WeatherCarousel lat={dstLatLong?.lat} lon={dstLatLong?.lng} dstAirport={trip?.destination || ""} />
+            R</div>
+          </div>
+        )
+      }
     </div>
   );
 };

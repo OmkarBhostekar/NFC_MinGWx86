@@ -39,7 +39,7 @@ const MyTrips = (props: Props) => {
         >
           {
             trips && trips.map((obj, idx) => {
-              return <Card key={idx} trip={obj} />
+              return <Card key={idx} trip={obj} parent='my-trips' />
             })
           }
         </div>
