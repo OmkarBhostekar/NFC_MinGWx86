@@ -8,7 +8,7 @@ import {
   BsFillLayersFill,
 } from "react-icons/bs";
 import { RxCross2 } from "react-icons/rx";
-import YouPNG from "@/assets/map/you.png";
+import YouPNG from '@/assets/map/you.png'
 import {
   useJsApiLoader,
   GoogleMap,
@@ -24,6 +24,10 @@ import CameraIcon from '@/assets/map/camera.png'
 import { GiPathDistance } from 'react-icons/gi'
 import { BsClockHistory } from 'react-icons/bs'
 import { useRouter } from "next/navigation";
+import { AiFillAlert } from "react-icons/ai";
+import Hospital from "@/assets/map/hospital.png";
+import PoliceCar from "@/assets/map/police-car.png";
+// import Police from "@/assets/map/police.png";
 
 function Map() {
   const router = useRouter();
@@ -45,11 +49,24 @@ function Map() {
   const [activeMarker, setActiveMarker] = useState(-1);
   const [infoDomReady, setInfoDomReady] = useState(false);
 
+  const [doctorAlert, setDoctorAlert] = useState(false);
+  const [policeAlert, setPoliceAlert] = useState(false);
+
   const [markers, setMarkers] = useState<{
     longitude: number,
     latitude: number,
     img: string,
     desc: string
+  }[]>([])
+
+  const [docMarkers, setDocMarkers] = useState<{
+    longitude: number,
+    latitude: number,
+  }[]>([])
+
+  const [polMarkers, setPolMarkers] = useState<{
+    longitude: number,
+    latitude: number,
   }[]>([])
 
   const [menu, showMenu] = useState(false);
@@ -189,6 +206,37 @@ function Map() {
     setActiveMarker(marker);
   };
 
+  const handleAlert = ()=>{
+    fetch(`/api/get-coords`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        doc: doctorAlert,
+        pol: policeAlert,
+        lat: userCoords?.lat,
+        lng: userCoords?.lng,
+      }),
+    })
+    .then((e)=> e.json())
+    .then((data)=>{
+      console.log("Coords", data)
+      setDocMarkers(data?.doc?.map((e : any)=>{
+        return {
+          longitude: e.geometry.location.lng,
+          latitude: e.geometry.location.lat,
+        }
+      }))
+      setPolMarkers(data?.pol?.map((e : any)=>{
+        return {
+          longitude: e.geometry.location.lng,
+          latitude: e.geometry.location.lat,
+        }
+      }))
+    })
+  }
+
   return (
     <div className="flex relative flex-col items-center h-screen w-screen">
       <div className="absolute left-0 top-0 h-full w-full">
@@ -253,15 +301,96 @@ function Map() {
               </Marker>
             ))
           }
+          {
+            docMarkers?.map((marker, index) => (
+              <Marker
+                key={index}
+                onClick={() => handleActiveMarker(index + 1)}
+                position={{ lat: marker.latitude, lng: marker.longitude }}
+                icon={Hospital.src || "http://maps.google.com/mapfiles/ms/icons/green-dot.png"}
+              >
+                {/* Infobox */}
+                {
+                  activeMarker === index + 1 && (
+                    <InfoBox
+                      options={{ closeBoxURL: ``, enableEventPropagation: true }}
+                      onDomReady={() => setInfoDomReady(true)}
+                      onUnmount={() => setInfoDomReady(false)}
+                    >
+                      <div className="flex flex-col items-center justify-center bg-white p-4 rounded-md shadow-xl">
+                        {/* <div className="flex items-center justify-center">
+                          <img src={YouPNG.src || "http://maps.google.com/mapfiles/ms/icons/green-dot.png"} alt="You" className="w-8 h-8" />
+                          <span className="text-sm font-semibold text-black">You</span>
+                        </div>
+                        <div className="flex items-center justify-center">
+                          <span className="text-xs font-semibold text-black">Lat: {center.lat.toFixed(4)}</span>
+                          <span className="text-xs font-semibold text-black">Lng: {center.lng.toFixed(4)}</span>
+                        </div> */}
+
+                        <div className='absolute right-2 top-2 cursor-pointer bg-white p-1'>
+                          <RxCross2 className='w-6 h-6 text-black' onClick={() => handleActiveMarker(-1)} />
+                        </div>
+                      </div>
+                    </InfoBox>
+                  )
+                }
+              </Marker>
+            ))
+          }
+          {
+            polMarkers?.map((marker, index) => (
+              <Marker
+                key={index}
+                onClick={() => handleActiveMarker(index + 1)}
+                position={{ lat: marker.latitude, lng: marker.longitude }}
+                icon={PoliceCar.src || "http://maps.google.com/mapfiles/ms/icons/green-dot.png"}
+              >
+                {/* Infobox */}
+                {
+                  activeMarker === index + 1 && (
+                    <InfoBox
+                      options={{ closeBoxURL: ``, enableEventPropagation: true }}
+                      onDomReady={() => setInfoDomReady(true)}
+                      onUnmount={() => setInfoDomReady(false)}
+                    >
+                      <div className="flex flex-col items-center justify-center bg-white p-4 rounded-md shadow-xl">
+                        {/* <div className="flex items-center justify-center">
+                          <img src={YouPNG.src || "http://maps.google.com/mapfiles/ms/icons/green-dot.png"} alt="You" className="w-8 h-8" />
+                          <span className="text-sm font-semibold text-black">You</span>
+                        </div>
+                        <div className="flex items-center justify-center">
+                          <span className="text-xs font-semibold text-black">Lat: {center.lat.toFixed(4)}</span>
+                          <span className="text-xs font-semibold text-black">Lng: {center.lng.toFixed(4)}</span>
+                        </div> */}
+
+                        <div className='absolute right-2 top-2 cursor-pointer bg-white p-1'>
+                          <RxCross2 className='w-6 h-6 text-black' onClick={() => handleActiveMarker(-1)} />
+                        </div>
+                      </div>
+                    </InfoBox>
+                  )
+                }
+              </Marker>
+            ))
+          }
 
           {directionsResponse && (
             <DirectionsRenderer routeIndex={
               ecoRoute ? 1 : 0
-            } directions={directionsResponse} />
+            }
+            options={{
+              polylineOptions: {
+                strokeColor: ecoRoute ? "green" : "red",
+                strokeOpacity: 0.5,
+                strokeWeight: 4
+              }
+            }}
+
+             directions={directionsResponse} />
           )}
         </GoogleMap>
       </div>
-      <div className="p-4 w-[90%] md:w-70% mx-auto rounded-lg m-4 bg-white shadow-base min-w-fit z-10 relative">
+      <div className="p-4 w-[90%] md:w-70% mx-auto rounded-lg m-4 bg-white shadow-lg min-w-fit z-10 relative">
         <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 justify-between">
           <div className="flex-grow-1  flex space-x-2 items-center">
             <Autocomplete
@@ -327,47 +456,53 @@ function Map() {
       {/* Menu - ahowing having buttons for parking data, traffic data, carbon efficient data,  and more */}
       {menu && (
         <div
-          onClick={() => {
-            showMenu(false);
-          }}
-          className="fixed top-0 left-0 h-screen w-screen bg-black bg-opacity-50"
+          // onClick={() => {
+          //   showMenu(false);
+          // }}
+          className="fixed top-0 left-0 h-screen w-screen bg-black bg-opacity-50 z-10"
         >
-          <div className="fixed bottom-14 right-14 rounded-md bg-white shadow-md w-[80%] h-32">
-            {/* <select 
-                className='w-full h-full rounded-md'
-                value={selectedOption}
-                onChange={(e)=>{
-                  setSelectedOption(e.target.value)
-                }}
-              name="" id="">
-                {
-                  mapLayerOptions.map((option, index) => (
-                    <option
-                      key={index}
-                      value={option}
-                      onClick={() => {
-                        setSelectedOption(option)
-                      }}
-                    >
-                      {option}
-                    </option>
-                  ))
-                }
-              </select> */}
-            Nothing Here!
+          <div
+            onClick={() => {
+              showMenu(false);
+            }}
+            className="absolute top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 -z-10" />
+          <div className="fixed bottom-14 left-14 right-14 rounded-md bg-white text-black shadow-md">
+            <div className="flex flex-col space-y-2 p-6">
+              <div className="flex space-x-2 items-center">
+                <input id="doc" checked={doctorAlert} type="checkbox" className="w-4 h-4" onChange={(e) => { setDoctorAlert(e.target.checked) }} />
+                <label htmlFor="doc" className="text-black font-semibold text-lg">Doctor</label>
+              </div>
+              <div className="flex space-x-2 items-center">
+                <input id="pol" checked={policeAlert} type="checkbox" className="w-4 h-4" onChange={(e) => { setPoliceAlert(e.target.checked) }} />
+                <label htmlFor="pol" className="text-black font-semibold text-lg">Police</label>
+              </div>
+              <div className="flex space-x-2 items-center w-full justify-end">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    console.log(doctorAlert, policeAlert)
+                    handleAlert()
+                    showMenu(false)
+                  }}
+                  className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                  Submit
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
       {/* Floating Btn*/}
-      {/* <div className="fixed bottom-4 right-4">
-        <BsFillLayersFill
+      <div className="fixed bottom-4 left-4">
+        <AiFillAlert
           onClick={() => {
             showMenu(true);
           }}
-          className="bg-green-500 hover:bg-green-700 text-white w-10 h-10 p-2 rounded-full"
+          className="bg-red-500 hover:bg-red-700 text-white w-10 h-10 p-2 rounded-full"
+          style={{ boxShadow: "red 0px 0px 31px 2px" }}
         />
-      </div> */}
+      </div>
 
       <div className="fixed bottom-4 right-4">
         <BsArrowRight
